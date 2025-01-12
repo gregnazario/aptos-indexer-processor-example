@@ -1,10 +1,8 @@
 use crate::db::common::models::profile_models::Profile;
 use anyhow::Result;
-use aptos_indexer_processor_sdk::aptos_protos::transaction::v1::{
-    write_set_change, WriteSetChange,
-};
+use aptos_indexer_processor_sdk::aptos_protos::transaction::v1::write_set_change;
 use aptos_indexer_processor_sdk::{
-    aptos_protos::transaction::v1::{transaction::TxnData, Transaction},
+    aptos_protos::transaction::v1::Transaction,
     traits::{async_step::AsyncRunType, AsyncStep, NamedStep, Processable},
     types::transaction_context::TransactionContext,
     utils::errors::ProcessorError,
@@ -46,7 +44,7 @@ impl Processable for ProfileExtractor {
                             }
                         }
 
-                        return false;
+                        false
                     }).filter_map(|change| Profile::from_change(change, txn_version, block_height)).collect()
                 } else {
                     vec![]

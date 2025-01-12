@@ -3,26 +3,23 @@
 
 #![allow(clippy::extra_unused_lifetimes)]
 
+use crate::schema::profiles;
 use aptos_indexer_processor_sdk::aptos_protos::transaction::v1::{
     write_set_change, WriteSetChange,
-};
-use aptos_indexer_processor_sdk::{
-    aptos_protos::transaction::v1::Event as EventPB,
-    utils::convert::{standardize_address, truncate_str},
 };
 use diesel::{Identifiable, Insertable};
 use field_count::FieldCount;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, FieldCount, Identifiable, Insertable, Serialize)]
-#[diesel(primary_key(transaction_version, event_index))]
-#[diesel(table_name = events)]
+#[diesel(primary_key(transaction_version, account_address))]
+#[diesel(table_name = profiles)]
 pub struct Profile {
     pub account_address: String,
     pub transaction_version: i64,
     pub transaction_block_height: i64,
-    pub profile_name: String,
-    pub profile_image_url: String,
+    pub name: String,
+    pub avatar_url: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -46,9 +43,9 @@ impl Profile {
                 account_address: write_resource.address.clone(),
                 transaction_version,
                 transaction_block_height,
-                profile_name: data.name,
-                profile_image_url: data.avatar_url, // TODO: Limit avatar URL length
-            });
+                name: data.name,
+                avatar_url: data.avatar_url, // TODO: Limit avatar URL length
+            })
         } else {
             None
         }

@@ -125,7 +125,7 @@ mod tests {
                 indexer_grpc_reconnection_timeout_secs: 1,
                 indexer_grpc_response_item_timeout_secs: 1,
             },
-            processor_config: ProcessorConfig::EventsProcessor,
+            processor_config: ProcessorConfig::ProfileProcessor,
             backfill_config: backfill_config,
         };
     }

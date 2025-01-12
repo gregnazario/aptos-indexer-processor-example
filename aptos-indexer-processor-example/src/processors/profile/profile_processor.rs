@@ -1,4 +1,5 @@
-use super::{events_extractor::EventsExtractor, profile_storer::ProfileStorer};
+use super::profile_storer::ProfileStorer;
+use crate::processors::profile::profile_extractor::ProfileExtractor;
 use crate::{
     common::processor_status_saver::get_processor_status_saver,
     config::indexer_processor_config::IndexerProcessorConfig,
@@ -18,14 +19,13 @@ use aptos_indexer_processor_sdk::{
     traits::IntoRunnableStep,
 };
 use tracing::info;
-use crate::processors::events::profile_extractor::ProfileExtractor;
 
-pub struct EventsProcessor {
+pub struct ProfileProcessor {
     pub config: IndexerProcessorConfig,
     pub db_pool: ArcDbPool,
 }
 
-impl EventsProcessor {
+impl ProfileProcessor {
     pub async fn new(config: IndexerProcessorConfig) -> Result<Self> {
         let conn_pool = new_db_pool(
             &config.db_config.postgres_connection_string,
@@ -65,8 +65,8 @@ impl EventsProcessor {
             ..transaction_stream_config
         })
         .await?;
-        let events_extractor = ProfileExtractor {};
-        let events_storer = ProfileStorer::new(self.db_pool.clone());
+        let profile_extractor = ProfileExtractor {};
+        let profile_storer = ProfileStorer::new(self.db_pool.clone());
         let version_tracker = VersionTrackerStep::new(
             get_processor_status_saver(self.db_pool.clone(), self.config.clone()),
             DEFAULT_UPDATE_PROCESSOR_STATUS_SECS,
@@ -76,8 +76,8 @@ impl EventsProcessor {
         let (_, buffer_receiver) = ProcessorBuilder::new_with_inputless_first_step(
             transaction_stream.into_runnable_step(),
         )
-        .connect_to(events_extractor.into_runnable_step(), 10)
-        .connect_to(events_storer.into_runnable_step(), 10)
+        .connect_to(profile_extractor.into_runnable_step(), 10)
+        .connect_to(profile_storer.into_runnable_step(), 10)
         .connect_to(version_tracker.into_runnable_step(), 10)
         .end_and_return_output_receiver(10);
 
@@ -89,7 +89,7 @@ impl EventsProcessor {
                         continue;
                     }
                     info!(
-                        "Finished processing events from versions [{:?}, {:?}]",
+                        "Finished processing profiles from versions [{:?}, {:?}]",
                         txn_context.metadata.start_version, txn_context.metadata.end_version,
                     );
                 }

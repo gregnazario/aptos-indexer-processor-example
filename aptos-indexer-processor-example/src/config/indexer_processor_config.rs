@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use super::processor_config::ProcessorConfig;
-use crate::processors::events::events_processor::EventsProcessor;
+use crate::processors::profile::profile_processor::ProfileProcessor;
 use anyhow::Result;
 use aptos_indexer_processor_sdk::aptos_indexer_transaction_stream::TransactionStreamConfig;
 use aptos_indexer_processor_sdk_server_framework::RunnableConfig;
@@ -24,10 +24,10 @@ pub struct IndexerProcessorConfig {
 impl RunnableConfig for IndexerProcessorConfig {
     async fn run(&self) -> Result<()> {
         match self.processor_config {
-            ProcessorConfig::EventsProcessor => {
-                let events_processor = EventsProcessor::new(self.clone()).await?;
-                events_processor.run_processor().await
-            },
+            ProcessorConfig::ProfileProcessor => {
+                let profile_processor = ProfileProcessor::new(self.clone()).await?;
+                profile_processor.run_processor().await
+            }
         }
     }
 

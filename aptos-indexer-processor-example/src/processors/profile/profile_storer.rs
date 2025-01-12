@@ -1,3 +1,4 @@
+use crate::db::common::models::profile_models::Profile;
 use crate::{
     schema,
     utils::database::{execute_in_chunks, get_config_table_chunk_size, ArcDbPool},
@@ -16,7 +17,6 @@ use diesel::{
     ExpressionMethods,
 };
 use tracing::{error, info};
-use crate::db::common::models::profile_models::Profile;
 
 pub struct ProfileStorer
 where
@@ -37,16 +37,13 @@ fn insert_profiles_query(
     impl QueryFragment<Pg> + diesel::query_builder::QueryId + Send,
     Option<&'static str>,
 ) {
-    use schema::events::dsl::*;
+    use schema::profiles::dsl::*;
     (
-        diesel::insert_into(schema::events::table)
+        diesel::insert_into(schema::profiles::table)
             .values(items_to_insert)
-            .on_conflict((transaction_version, event_index))
+            .on_conflict((transaction_version, account_address))
             .do_update()
-            .set((
-                inserted_at.eq(excluded(inserted_at)),
-                indexed_type.eq(excluded(indexed_type)),
-            )),
+            .set((inserted_at.eq(excluded(inserted_at)),)),
         None,
     )
 }
@@ -77,7 +74,7 @@ impl Processable for ProfileStorer {
                 );
             }
             Err(e) => {
-                error!("Failed to store events: {:?}", e);
+                error!("Failed to store profile: {:?}", e);
             }
         }
         Ok(Some(profile_changes))
