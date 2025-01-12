@@ -1,4 +1,4 @@
-use super::{events_extractor::EventsExtractor, events_storer::EventsStorer};
+use super::{events_extractor::EventsExtractor, profile_storer::ProfileStorer};
 use crate::{
     common::processor_status_saver::get_processor_status_saver,
     config::indexer_processor_config::IndexerProcessorConfig,
@@ -18,6 +18,7 @@ use aptos_indexer_processor_sdk::{
     traits::IntoRunnableStep,
 };
 use tracing::info;
+use crate::processors::events::profile_extractor::ProfileExtractor;
 
 pub struct EventsProcessor {
     pub config: IndexerProcessorConfig,
@@ -64,8 +65,8 @@ impl EventsProcessor {
             ..transaction_stream_config
         })
         .await?;
-        let events_extractor = EventsExtractor {};
-        let events_storer = EventsStorer::new(self.db_pool.clone());
+        let events_extractor = ProfileExtractor {};
+        let events_storer = ProfileStorer::new(self.db_pool.clone());
         let version_tracker = VersionTrackerStep::new(
             get_processor_status_saver(self.db_pool.clone(), self.config.clone()),
             DEFAULT_UPDATE_PROCESSOR_STATUS_SECS,

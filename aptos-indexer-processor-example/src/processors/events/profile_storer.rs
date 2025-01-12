@@ -1,5 +1,4 @@
 use crate::{
-    db::common::models::events_models::EventModel,
     schema,
     utils::database::{execute_in_chunks, get_config_table_chunk_size, ArcDbPool},
 };
@@ -17,23 +16,23 @@ use diesel::{
     ExpressionMethods,
 };
 use tracing::{error, info};
+use crate::db::common::models::profile_models::Profile;
 
-/// EventsStorer is a step that inserts events in the database.
-pub struct EventsStorer
+pub struct ProfileStorer
 where
     Self: Sized + Send + 'static,
 {
     conn_pool: ArcDbPool,
 }
 
-impl EventsStorer {
+impl ProfileStorer {
     pub fn new(conn_pool: ArcDbPool) -> Self {
         Self { conn_pool }
     }
 }
 
-fn insert_events_query(
-    items_to_insert: Vec<EventModel>,
+fn insert_profiles_query(
+    items_to_insert: Vec<Profile>,
 ) -> (
     impl QueryFragment<Pg> + diesel::query_builder::QueryId + Send,
     Option<&'static str>,
@@ -53,42 +52,42 @@ fn insert_events_query(
 }
 
 #[async_trait]
-impl Processable for EventsStorer {
-    type Input = Vec<EventModel>;
-    type Output = Vec<EventModel>;
+impl Processable for ProfileStorer {
+    type Input = Vec<Profile>;
+    type Output = Vec<Profile>;
     type RunType = AsyncRunType;
 
     async fn process(
         &mut self,
-        events: TransactionContext<Vec<EventModel>>,
-    ) -> Result<Option<TransactionContext<Vec<EventModel>>>, ProcessorError> {
+        profile_changes: TransactionContext<Vec<Profile>>,
+    ) -> Result<Option<TransactionContext<Vec<Profile>>>, ProcessorError> {
         let per_table_chunk_sizes: AHashMap<String, usize> = AHashMap::new();
         let execute_res = execute_in_chunks(
             self.conn_pool.clone(),
-            insert_events_query,
-            &events.data,
-            get_config_table_chunk_size::<EventModel>("events", &per_table_chunk_sizes),
+            insert_profiles_query,
+            &profile_changes.data,
+            get_config_table_chunk_size::<Profile>("profiles", &per_table_chunk_sizes),
         )
         .await;
         match execute_res {
             Ok(_) => {
                 info!(
-                    "Events version [{}, {}] stored successfully",
-                    events.metadata.start_version, events.metadata.end_version
+                    "Profile version [{}, {}] stored successfully",
+                    profile_changes.metadata.start_version, profile_changes.metadata.end_version
                 );
             }
             Err(e) => {
                 error!("Failed to store events: {:?}", e);
             }
         }
-        Ok(Some(events))
+        Ok(Some(profile_changes))
     }
 }
 
-impl AsyncStep for EventsStorer {}
+impl AsyncStep for ProfileStorer {}
 
-impl NamedStep for EventsStorer {
+impl NamedStep for ProfileStorer {
     fn name(&self) -> String {
-        "EventsStorer".to_string()
+        "ProfileStorer".to_string()
     }
 }

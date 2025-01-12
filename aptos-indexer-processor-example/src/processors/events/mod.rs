@@ -1,3 +1,4 @@
 pub mod events_extractor;
 pub mod events_processor;
-pub mod events_storer;
+pub mod profile_storer;
+mod profile_extractor;
